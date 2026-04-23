@@ -501,20 +501,21 @@ def render_metric_button_group(label, options, state_key, columns_per_row=4):
         current = options[0]
         st.session_state[state_key] = current
 
+    def select_metric(option):
+        st.session_state[state_key] = option
+
     for row_start in range(0, len(options), columns_per_row):
         row_options = options[row_start:row_start + columns_per_row]
         columns = st.columns(len(row_options), gap="small")
         for column, option in zip(columns, row_options):
-            pressed = column.button(
+            column.button(
                 option,
                 key=f"{state_key}_{option}",
                 use_container_width=True,
                 type="primary" if option == current else "secondary",
+                on_click=select_metric,
+                args=(option,),
             )
-            if pressed:
-                if st.session_state.get(state_key) != option:
-                    st.session_state[state_key] = option
-                    st.rerun()
 
     return st.session_state.get(state_key, current)
 
