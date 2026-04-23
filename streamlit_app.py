@@ -702,10 +702,10 @@ def render_app():
             st.caption(f"Reason: {result['stock_reason']}")
     else:
         stock_metric_map = {
+            "Market Cap": "market_cap",
             "Close": "close",
             "Daily Return": "daily_return",
             "Volume": "volume",
-            "Market Cap": "market_cap",
         }
         st.session_state.setdefault("stock_metric_pick", "Market Cap")
         stock_pick = render_metric_button_group(
@@ -762,15 +762,15 @@ def render_app():
         st.write("No data.")
     else:
         dupont_metric_map = {
+            "ROE (DuPont)": "ROE_DuPont",
             "Profit Margin (DuPont)": "ProfitMargin",
             "Asset Turnover (DuPont)": "AssetTurnover",
             "Equity Multiplier (DuPont)": "EqMultiplier",
-            "ROE (DuPont)": "ROE_DuPont",
             "ROA": "ROA",
-            "ROC": "ROC",
             "Debt Ratio": "DebtRatio",
             "Debt to Equity": "DebtToEquity",
             "Equity Ratio": "EquityRatio",
+            "ROC": "ROC",
             "Capital Intensity": "CapitalIntensity",
             "Liability to Revenue": "LiabilityToRevenue",
             "EBIT Margin": "EBITMargin",
