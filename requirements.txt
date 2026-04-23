@@ -1,0 +1,7 @@
+streamlit>=1.30
+wrds>=3.5.0
+pandas>=2.2,<2.3
+matplotlib>=3.8
+openpyxl>=3.1
+numpy>=1.26
+psycopg2-binary>=2.9

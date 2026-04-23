@@ -1,0 +1,13 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Local virtual environments
+.venv/
+venv/
+
+# Streamlit local secrets
+.streamlit/secrets.toml
+
+# IDE
+.vscode/
