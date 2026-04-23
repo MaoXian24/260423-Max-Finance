@@ -512,8 +512,9 @@ def render_metric_button_group(label, options, state_key, columns_per_row=4):
                 type="primary" if option == current else "secondary",
             )
             if pressed:
-                st.session_state[state_key] = option
-                current = option
+                if st.session_state.get(state_key) != option:
+                    st.session_state[state_key] = option
+                    st.rerun()
 
     return st.session_state.get(state_key, current)
 
