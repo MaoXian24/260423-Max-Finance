@@ -11,6 +11,7 @@ from wrds.sql import WRDS_CONNECT_ARGS, WRDS_POSTGRES_DB, WRDS_POSTGRES_HOST, WR
 
 warnings.filterwarnings("ignore")
 
+# Global constants used across queries, chart formatting, and defaults.
 SHROUT_MULTIPLIER = 1000
 YEAR_OPTIONS = [str(y) for y in range(2015, 2025)]
 DEFAULT_TICKER_POOL = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA"]
@@ -112,6 +113,10 @@ def load_wrds_secrets():
     return secret_user, secret_password
 
 
+# ============================
+# SIC Industry Benchmark Query
+# ============================
+# Pulls yearly SIC peer averages from Compustat funda for 2015-2024.
 def get_industry_avg(sic_code, wrds_user, wrds_password):
     if sic_code is None or pd.isna(sic_code):
         return pd.DataFrame()
@@ -153,6 +158,8 @@ def get_industry_avg(sic_code, wrds_user, wrds_password):
 
 
 def get_company_info(ticker, wrds_user, wrds_password):
+    # Tries Compustat funda first (latest valid record), then falls back to
+    # comp.company SIC when no funda row is available.
     conn = None
     try:
         conn = open_wrds_connection(wrds_user, wrds_password)
@@ -197,6 +204,10 @@ def get_year_quarters(year):
     ]
 
 
+# ============================
+# Daily Stock Data (CRSP)
+# ============================
+# Pulls selected-year daily pricing/return/volume/share-outstanding data.
 def get_single_year_daily(ticker, year, wrds_user, wrds_password):
     quarters = get_year_quarters(year)
     all_data = []
@@ -219,6 +230,7 @@ def get_single_year_daily(ticker, year, wrds_user, wrds_password):
                 pass
 
     for start_date, end_date in quarters:
+        # Query by quarter windows to keep request sizes manageable.
         conn = None
         try:
             conn = open_wrds_connection(wrds_user, wrds_password)
@@ -258,6 +270,10 @@ def get_single_year_daily(ticker, year, wrds_user, wrds_password):
     return stock_df, ""
 
 
+# ============================
+# Financial Statement + DuPont Metrics
+# ============================
+# Pulls annual fundamentals and computes DuPont decomposition components.
 def get_financial_data(ticker, wrds_user, wrds_password):
     conn = None
     try:
@@ -408,6 +424,7 @@ def make_multi_line_chart(
 
 
 def inject_custom_css():
+    # Injects all visual styles for section headers and table themes.
     base = st.get_option("theme.base") or "light"
     section_title_color = "#D1D5DB" if base == "dark" else "#6B7280"
     table_title_color = "#D1D5DB" if base == "dark" else "#6B7280"
@@ -495,6 +512,7 @@ def render_table_block(title, df, theme, max_rows=None):
 
 
 def render_metric_button_group(label, options, state_key, columns_per_row=4):
+    # Renders flat metric buttons and persists the selected option in session state.
     st.markdown(f"<div class='mf-table-title'>{label}</div>", unsafe_allow_html=True)
     current = st.session_state.get(state_key, options[0])
     if current not in options:
@@ -521,6 +539,7 @@ def render_metric_button_group(label, options, state_key, columns_per_row=4):
 
 
 def build_excel(info_df, stock_df, financial_df, industry_df, ticker, year):
+    # Exports all retrieved datasets into one multi-sheet Excel workbook.
     file_name = f"{ticker}_{year}_Full_Data.xlsx"
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
@@ -537,6 +556,7 @@ def build_excel(info_df, stock_df, financial_df, industry_df, ticker, year):
 
 
 def run_query(ticker, year, wrds_user, wrds_password):
+    # End-to-end query orchestration used by the Search action.
     result = {
         "info_df": pd.DataFrame(),
         "stock_df": pd.DataFrame(),
@@ -570,6 +590,7 @@ def run_query(ticker, year, wrds_user, wrds_password):
 
 
 def render_app():
+    # Main Streamlit entry point: input panel, query handling, charts, tables, download.
     st.set_page_config(page_title="Max Finance", layout="wide")
     inject_custom_css()
     st.title("Max Finance")
@@ -577,6 +598,7 @@ def render_app():
     section_text_color = "#D1D5DB" if (st.get_option("theme.base") or "light") == "dark" else "#6B7280"
 
     if "default_ticker" not in st.session_state:
+        # Easter egg: assign a random default ticker at first load.
         st.session_state.default_ticker = random.choice(DEFAULT_TICKER_POOL)
 
     if "result" not in st.session_state:
@@ -597,6 +619,7 @@ def render_app():
         st.session_state.use_secret_credentials = has_secret_credentials
 
     with st.sidebar:
+        # Sidebar handles credentials, ticker input, and one-year stock selector.
         st.header("Input Panel")
         if has_secret_credentials:
             use_secret_credentials = st.toggle(
@@ -630,6 +653,7 @@ def render_app():
         clear_runtime_state()
 
     if run_btn:
+        # Validate inputs and credentials before executing full WRDS queries.
         st.session_state.auth_error = ""
         if not ticker:
             st.session_state.auth_error = "Please enter a ticker symbol."
@@ -806,6 +830,7 @@ def render_app():
             st.caption(f"Reason: {result['industry_reason']}")
 
     render_section_title(5, "All Data Tables", "#22D3EE", text_color=section_text_color)
+    # Tables are grouped after charts for quick scan first, detail inspection second.
     st.caption("Tables are grouped below after the chart sections.")
 
     if info_df is None or info_df.empty:
